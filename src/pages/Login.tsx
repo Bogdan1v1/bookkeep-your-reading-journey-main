@@ -31,7 +31,7 @@ export default function Login() {
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     
     // Для Windows краще використовувати 127.0.0.1
-    const API_BASE = 'http://127.0.0.1:5000'; 
+    const API_BASE = 'https://bookkeep-your-reading-journey-main.onrender.com'; 
     
     const body = isLogin 
       ? { email, password } 
