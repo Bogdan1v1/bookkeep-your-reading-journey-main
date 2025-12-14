@@ -24,7 +24,7 @@ export function BookProvider({ children }: { children: ReactNode }) {
   const { token } = useAuth();
   
   // Для Windows краще 127.0.0.1
-  const API_URL = 'https://bookkeep-your-reading-journey-main.onrender.com';
+  const API_URL = 'https://bookkeep-your-reading-journey-main.onrender.com/api/books';
 
   const getAuthHeaders = () => {
     const currentToken = token || localStorage.getItem('token');
