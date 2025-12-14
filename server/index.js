@@ -12,7 +12,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:8080', 
+    'https://bookkeep-your-reading-journey-main-1.onrender.com' // 👈 Встав сюди своє НОВЕ посилання фронтенду з Render
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
