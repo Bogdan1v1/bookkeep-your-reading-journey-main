@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ export function AddBookModal({ open, onOpenChange }: AddBookModalProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<GoogleBookResult[]>([]);
   const [showResults, setShowResults] = useState(false);
-
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   // Стан форми
   const [formData, setFormData] = useState({
     title: '',
@@ -59,28 +59,42 @@ export function AddBookModal({ open, onOpenChange }: AddBookModalProps) {
     coverUrl: '',
   });
 
-  // Функція пошуку в Google Books
-  const handleSearch = async () => {
+  // Функція пошуку з Debounce
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
-    
-    setIsSearching(true);
-    setShowResults(true);
-    try {
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=5`);
-      const data = await response.json();
-      if (data.items) {
-        setSearchResults(data.items);
-      } else {
-        setSearchResults([]);
-        toast({ title: "Nothing found", description: "Try another keyword." });
-      }
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "Failed to search books.", variant: "destructive" });
-    } finally {
-      setIsSearching(false);
+
+    // Очищаємо попередній таймер, якщо він ще не спрацював
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
-  };
+
+    // Встановлюємо новий таймер на 500ms
+    debounceTimer.current = setTimeout(async () => {
+      setIsSearching(true);
+      setShowResults(true);
+      try {
+        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=5`);
+        const data = await response.json();
+        
+        if (response.status === 429) {
+          toast({ title: "Rate Limit Exceeded", description: "Please wait a moment before searching again.", variant: "destructive" });
+          return;
+        }
+
+        if (data.items) {
+          setSearchResults(data.items);
+        } else {
+          setSearchResults([]);
+          toast({ title: "Nothing found", description: "Try another keyword." });
+        }
+      } catch (error) {
+        console.error(error);
+        toast({ title: "Error", description: "Failed to search books.", variant: "destructive" });
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500); // Затримка 500 мілісекунд
+  }, [searchQuery]);
 
   // Коли вибрали книгу зі списку
   const selectBook = (book: GoogleBookResult) => {
@@ -160,8 +174,16 @@ export function AddBookModal({ open, onOpenChange }: AddBookModalProps) {
             <Input 
               placeholder="Type book title (e.g. Harry Potter)" 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                handleSearch(); // Викликаємо пошук при зміні
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault(); // Запобігаємо сабміту всієї форми
+                  handleSearch();
+                }
+              }}
             />
             <Button onClick={handleSearch} disabled={isSearching} variant="secondary">
               {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
