@@ -73,7 +73,7 @@ export function AddBookModal({ open, onOpenChange }: AddBookModalProps) {
       setIsSearching(true);
       setShowResults(true);
       try {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=5`);
+        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=5&key=AIzaSyD3elGav3tphVTV2anikjTrbFEeUHzbER0`);
         const data = await response.json();
         
         if (response.status === 429) {
